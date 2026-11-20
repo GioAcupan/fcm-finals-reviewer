@@ -1,4 +1,4 @@
-import { QUESTIONS, LESSONS } from './questions.js';
+import { QUESTIONS, LESSONS, TOPICS } from './questions.js';
 import { CHEATS } from './cheats.js';
 import { selectQuestions, makeSession, scoreSession, recordAttempt } from './engine.js';
 
@@ -60,6 +60,7 @@ function setupForm(mode) {
   return `<form id="setup-form" data-mode="${mode}" class="setup"><div class="section-head"><h2>${mode === 'exam' ? 'Set up your exam' : 'A practice session, your way'}</h2><span class="small muted">${mode === 'exam' ? 'Answers after submission' : 'Learn as you go'}</span></div>
     <fieldset><legend>Difficulty</legend><div class="segmented">${['easy', 'medium', 'hard', 'mix'].map(d => `<label><input type="radio" name="difficulty" value="${d}" ${d === 'mix' ? 'checked' : ''}><span>${d === 'mix' ? 'Mixed' : cap(d)}</span></label>`).join('')}</div></fieldset>
     <details class="lesson-picker"><summary><span>Lessons</span><span id="selected-label" class="muted small">All 10 selected</span></summary><div class="lesson-picks"><div class="picker-tools"><button type="button" class="text-button" data-action="select-all">Select all</button><button type="button" class="text-button" data-action="select-none">Clear</button></div>${LESSONS.map(l => `<label class="check-row"><input type="checkbox" name="lesson" value="${l.id}" checked><span><span class="mono muted">${String(l.id).padStart(2, '0')}</span> ${l.title}</span></label>`).join('')}</div></details>
+    ${mode === 'practice' ? '<div class="topic-control"><label for="topic-filter">Topic</label><select id="topic-filter" name="topic" aria-describedby="topic-help"><option value="all">All topics</option></select></div><p id="topic-help" class="topic-help">Choose a topic within your selected lessons.</p>' : ''}
     <div class="form-row"><label>Questions<select name="count">${[10, 20, 30, 50, 180].map(n => `<option value="${n}" ${n === (mode === 'exam' ? 30 : 10) ? 'selected' : ''}>${n === 180 ? 'All available' : n}</option>`).join('')}</select></label>${mode === 'exam' ? `<label>Time limit<select name="minutes">${[15,30,45,60,90].map(n => `<option value="${n}" ${n === 45 ? 'selected' : ''}>${n} minutes</option>`).join('')}</select></label>` : `<div class="form-note">No timer.<br>Space to think.</div>`}</div>
     <div class="setup-bottom"><span id="pool-label" class="small muted" aria-live="polite">${QUESTIONS.length} questions available</span><button class="button" type="submit">${mode === 'exam' ? 'Begin mock exam' : 'Start practicing'}</button></div><p id="form-error" class="error-text" role="alert" hidden></p></form>`;
 }
@@ -143,12 +144,22 @@ function render() {
 function updatePool() {
   const f=$('#setup-form'); if(!f) return;
   const lessons=[...f.querySelectorAll('[name=lesson]:checked')].map(x=>Number(x.value));
+  const topicSelect=f.querySelector('[name=topic]');
+  if(topicSelect) {
+    const previous=topicSelect.value;
+    const available=TOPICS.filter(t=>lessons.includes(t.lesson));
+    topicSelect.innerHTML='<option value="all">All topics</option>'+LESSONS.filter(l=>lessons.includes(l.id)).map(l=>`<optgroup label="Lesson ${l.id} · ${esc(l.title)}">${available.filter(t=>t.lesson===l.id).map(t=>`<option value="${t.id}">${esc(t.title)} (${t.questionIds.length})</option>`).join('')}</optgroup>`).join('');
+    topicSelect.value=available.some(t=>t.id===previous)?previous:'all';
+    topicSelect.disabled=!lessons.length;
+  }
+  const topic=topicSelect?.value||'all';
   const difficulty=new FormData(f).get('difficulty');
-  const count=QUESTIONS.filter(q=>lessons.includes(q.lesson)&&(difficulty==='mix'||q.difficulty===difficulty)).length;
+  const count=QUESTIONS.filter(q=>lessons.includes(q.lesson)&&(topic==='all'||q.topic===topic)&&(difficulty==='mix'||q.difficulty===difficulty)).length;
   const wanted=Number(new FormData(f).get('count'));
   $('#selected-label').textContent=lessons.length===10?'All 10 selected':`${lessons.length} selected`;
   $('#pool-label').textContent=`${count} available · ${Math.min(count,wanted)} in this session`;
   f.querySelector('[type=submit]').disabled=!count;
+  if(topicSelect) $('#topic-help').textContent=!lessons.length?'Select at least one lesson to choose a topic.':!count?'No questions match this topic and difficulty. Choose another topic or difficulty.':'Choose a topic within your selected lessons.';
 }
 let pendingStart;
 function start(options) {
@@ -179,7 +190,8 @@ document.addEventListener('submit',e=>{
   if(e.target.id!=='setup-form')return;e.preventDefault();
   const f=e.target,data=new FormData(f),lessons=data.getAll('lesson').map(Number);
   if(!lessons.length){$('#form-error').hidden=false;$('#form-error').textContent='Select at least one lesson.';return;}
-  start({mode:f.dataset.mode,difficulty:data.get('difficulty'),count:Number(data.get('count')),minutes:Number(data.get('minutes')||45),lessons});
+  const topic=data.get('topic');
+  start({mode:f.dataset.mode,difficulty:data.get('difficulty'),count:Number(data.get('count')),minutes:Number(data.get('minutes')||45),lessons,topics:topic&&topic!=='all'?[topic]:undefined});
 });
 document.addEventListener('change',e=>{
   if(e.target.closest('#setup-form'))updatePool();

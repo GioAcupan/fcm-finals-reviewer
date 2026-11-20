@@ -10,8 +10,9 @@ export function shuffle(items, random = Math.random) {
 }
 
 // Round-robin buckets keep lessons represented before taking extra questions.
-export function selectQuestions(bank, { lessons, difficulty = 'mix', count = 20, ids } = {}, random = Math.random) {
+export function selectQuestions(bank, { lessons, topics, difficulty = 'mix', count = 20, ids } = {}, random = Math.random) {
   const pool = bank.filter(q => (!lessons || lessons.includes(q.lesson)) &&
+    (!topics || topics.includes(q.topic)) &&
     (difficulty === 'mix' || q.difficulty === difficulty) && (!ids || ids.includes(q.id)));
   const buckets = new Map();
   for (const q of shuffle(pool, random)) {

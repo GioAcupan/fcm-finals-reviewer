@@ -1,4 +1,44 @@
 import { test, expect } from '@playwright/test';
+import { QUESTIONS } from '../../questions.js';
+
+test('topic practice combines difficulty, limits question count, and survives reload offline',async({page,context})=>{
+  await page.goto('/');
+  await page.evaluate(()=>navigator.serviceWorker.ready);
+  await page.waitForFunction(()=>navigator.serviceWorker.controller!==null);
+  await context.setOffline(true);await page.reload();
+  await page.getByLabel('Topic',{exact:true}).selectOption('counterexamples');
+  await page.getByLabel('Hard',{exact:true}).check();
+  await expect(page.locator('#pool-label')).toHaveText('4 available · 4 in this session');
+  await page.getByRole('button',{name:'Start practicing',exact:true}).click();
+  const ids=await page.evaluate(()=>JSON.parse(localStorage.getItem('fcm-reviewer-v1')).session.items.map(i=>i.id));
+  expect(ids.sort()).toEqual(['L4-13','L4-14','L4-17','L4-18']);
+  expect(ids.every(id=>QUESTIONS.find(q=>q.id===id).topic==='counterexamples')).toBe(true);
+  await page.reload();await expect(page.locator('#question-title')).toBeVisible();
+  const restored=await page.evaluate(()=>JSON.parse(localStorage.getItem('fcm-reviewer-v1')).session.items.map(i=>i.id));
+  expect(restored.sort()).toEqual(ids);
+});
+test('topic choices follow selected lessons and empty difficulty pools disable practice',async({page})=>{
+  await page.goto('/');
+  const topic=page.getByLabel('Topic',{exact:true});
+  await topic.selectOption('composition-injectivity');
+  await page.getByLabel('Easy',{exact:true}).check();
+  await expect(page.getByRole('button',{name:'Start practicing',exact:true})).toBeDisabled();
+  await expect(page.locator('#topic-help')).toContainText('Choose another topic or difficulty');
+  await page.getByLabel('Hard',{exact:true}).check();
+  await expect(page.getByRole('button',{name:'Start practicing',exact:true})).toBeEnabled();
+  await page.locator('.lesson-picker summary').click();
+  await page.locator('[name=lesson][value="13"]').uncheck();
+  await expect(topic).toHaveValue('all');
+  await expect(topic.locator('option[value="composition-injectivity"]')).toHaveCount(0);
+  await page.getByRole('button',{name:'Clear',exact:true}).click();
+  await expect(topic).toBeDisabled();
+  await expect(page.getByRole('button',{name:'Start practicing',exact:true})).toBeDisabled();
+  await page.locator('[name=lesson][value="9"]').check();
+  await topic.selectOption('cartesian-products');
+  await expect(page.locator('#pool-label')).toHaveText('1 available · 1 in this session');
+  await page.getByRole('button',{name:'Start practicing',exact:true}).click();
+  await expect(page.locator('#question-title')).toHaveText('Let B={b,c,d}, D={e,f}. Which is B×D?');
+});
 
 test('practice can be answered, checked, saved, resumed, submitted, and reviewed',async({page})=>{
   const errors=[];page.on('pageerror',error=>errors.push(error.message));

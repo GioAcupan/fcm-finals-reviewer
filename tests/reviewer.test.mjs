@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { QUESTIONS, LESSONS } from '../questions.js';
+import { QUESTIONS, LESSONS, TOPICS } from '../questions.js';
 import { CHEATS } from '../cheats.js';
 import { validateBank, selectQuestions, makeSession, scoreSession, recordAttempt } from '../engine.js';
 
@@ -20,6 +20,31 @@ test('filters and small banks never backfill from unselected lessons or difficul
   assert.equal(result.length,4);assert.ok(result.every(q=>q.lesson===6&&q.difficulty==='hard'));
   assert.deepEqual(selectQuestions(QUESTIONS,{lessons:[]}),[]);
   assert.deepEqual(selectQuestions(QUESTIONS,{ids:[]}),[]);
+});
+test('all 180 questions have exactly one declared topic in the correct lesson',()=>{
+  assert.equal(TOPICS.length,30);
+  assert.equal(new Set(TOPICS.map(t=>t.id)).size,TOPICS.length);
+  const assigned=TOPICS.flatMap(t=>t.questionIds);
+  assert.equal(assigned.length,QUESTIONS.length);
+  assert.equal(new Set(assigned).size,QUESTIONS.length);
+  for(const topic of TOPICS) {
+    assert.ok(topic.questionIds.length>0);
+    for(const id of topic.questionIds) {
+      const q=QUESTIONS.find(q=>q.id===id);
+      assert.ok(q,`Unknown question ${id}`);
+      assert.equal(q.lesson,topic.lesson);assert.equal(q.topic,topic.id);
+    }
+  }
+});
+test('topic, lesson, and difficulty filters intersect without backfilling a small pool',()=>{
+  const result=selectQuestions(QUESTIONS,{topics:['counterexamples'],lessons:[4],difficulty:'hard',count:50});
+  assert.deepEqual(result.map(q=>q.id).sort(),['L4-13','L4-14','L4-17','L4-18']);
+  assert.deepEqual(selectQuestions(QUESTIONS,{topics:['counterexamples'],lessons:[5]}),[]);
+  assert.deepEqual(selectQuestions(QUESTIONS,{topics:[]}),[]);
+  assert.deepEqual(selectQuestions(QUESTIONS,{topics:['unknown-topic']}),[]);
+  const multi=selectQuestions(QUESTIONS,{topics:['cartesian-products','relation-properties'],count:180});
+  assert.equal(multi.length,16);
+  assert.ok(multi.every(q=>['cartesian-products','relation-properties'].includes(q.topic)));
 });
 test('answer keys are independent of shuffled option positions and survive JSON reload',()=>{
   const qs=selectQuestions(QUESTIONS,{count:30});const s=makeSession(qs,{mode:'exam',minutes:45},1000);

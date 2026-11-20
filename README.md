@@ -6,7 +6,7 @@ A mobile-first, offline-first reviewer for **lessons 4–13**, built around the 
 
 - **180 original multiple-choice questions**, with easy, medium, and hard questions in every lesson.
 - A worked explanation and a lesson-section or problem-set reference for every answer.
-- Lesson practice, difficulty filters, question counts, shuffled choices, bookmarks, and a mistake queue.
+- Lesson practice, 30 topic filters, difficulty filters, question counts, shuffled choices, bookmarks, and a mistake queue.
 - Timed mock exams, flagged questions, free navigation, automatic submission at expiry, and a full answer review.
 - A default 30-question mixed exam with **one easy, one medium, and one hard question per lesson**.
 - **10 searchable cheat sheets**, covering inference and replacement rules, proof templates, quantifiers, induction, relations, domains and ranges, function types, and composition.
@@ -40,6 +40,8 @@ Import **https://github.com/GioAcupan/fcm-finals-reviewer** as a new Vercel proj
 HTTPS on the deployed site enables service workers and installation. No server functions or database are required. The PWA is designed for deployment at the origin root.
 
 ## Offline and data behavior
+
+To focus practice, open **Study desk → A practice session, your way → Topic**. Choose a topic such as Cartesian products, formal proof steps, or induction for divisibility. Topics are grouped by lesson and narrow to the selected lessons. Combine a topic with Easy, Medium, Hard, or Mixed; the available count updates and the session uses only matching questions. Choose **All topics** to remove the topic filter. A topic resets to All topics when its lesson is deselected. Mock exams retain their lesson/difficulty mix.
 
 Visit online once and wait for **Ready offline**. The service worker caches the app, question bank, cheat sheets, and icons atomically. After that, navigation, new quizzes, explanations, and progress work offline, including after a page reload. Lecture video links need internet.
 

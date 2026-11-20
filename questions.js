@@ -13,6 +13,42 @@ export const LESSONS = [
   [13, 'Function composition', 'Order, evaluation & domain restrictions', 'VSYs4UScI6k']
 ].map(([id, title, description, video]) => ({ id, title, description, video }));
 
+// Explicit primary-topic assignments keep filtering independent of wording/source labels.
+export const TOPICS = [
+  [4, 'argument-basics', 'Validity & premises', [1,2]],
+  [4, 'truth-tables', 'Truth tables & conditional form', [3,4,5,6,11,12,15,16]],
+  [4, 'counterexamples', 'Counterexamples & truth assignments', [7,8,9,10,13,14,17,18]],
+  [5, 'standard-forms', 'Standard forms & fallacies', [1,2,3,4,5,6]],
+  [5, 'inference', 'Rules of inference', [7,9,10,22]],
+  [5, 'replacement', 'Equivalences & replacement rules', [8,11,12,13,14,15,16,21,24]],
+  [5, 'formal-proofs', 'Formal proof steps', [17,18,19,20,23]],
+  [6, 'quantifier-meaning', 'Quantifier meanings & equivalents', [3,4,7,10,12]],
+  [6, 'quantifier-negation', 'Negating quantified statements', [1,2,5,6,8,9,11]],
+  [7, 'proof-methods', 'Proof methods & contrapositives', [1,2,4,5,10,12,15]],
+  [7, 'parity-proofs', 'Odd & even integer proofs', [3,6,7,8,9,11,13,14]],
+  [8, 'induction-foundations', 'Base cases & induction structure', [1,2,3,6,16,17]],
+  [8, 'induction-sums', 'Induction for sum identities', [4,5,7,8,9,11,12,13]],
+  [8, 'induction-divisibility', 'Induction for divisibility', [10,14,15,18]],
+  [9, 'cartesian-products', 'Cartesian products', [1,2,23]],
+  [9, 'relation-rules', 'Relation rules & ordered pairs', [3,7,9,10,11,14,15,24]],
+  [9, 'relation-properties', 'Relation properties & equivalence', [4,5,6,8,12,13,16,17,18,19,20,21,22]],
+  [10, 'function-definition', 'Function definitions & images', [1,4,5,14]],
+  [10, 'finite-functions', 'Finite mappings: existence & uniqueness', [2,3,6,9,10,15]],
+  [10, 'formula-functions', 'Formula relations & branch restrictions', [7,8,11,12,13]],
+  [11, 'domain-codomain', 'Domain, codomain & range concepts', [1,4,15]],
+  [11, 'polynomial-range', 'Linear & quadratic ranges', [2,5,6,9,14]],
+  [11, 'rational-functions', 'Rational domains, ranges & preimages', [3,7,10,13]],
+  [11, 'radical-functions', 'Square-root domains & endpoints', [8,11,12]],
+  [12, 'function-classification', 'Injective, surjective & bijective', [1,2,3,4,5,6,7,8,9,11,13,18]],
+  [12, 'domain-restrictions', 'Domain restrictions for injectivity', [10,12,16]],
+  [12, 'onto-proofs', 'Codomain choices & surjectivity proofs', [14,15,17]],
+  [13, 'composition-evaluation', 'Composition order & evaluation', [1,2,3,4,5,7,8,9,10,11,12,13,14,15,16]],
+  [13, 'composition-domains', 'Composition domains & codomains', [6,17,18,19,20]],
+  [13, 'composition-injectivity', 'Composition & injectivity', [21]]
+].map(([lesson, id, title, numbers]) => ({
+  id, lesson, title, questionIds: numbers.map(n => `L${lesson}-${String(n).padStart(2, '0')}`)
+}));
+
 export const QUESTIONS = [];
 function add(lesson, difficulty, rows) {
   for (const [stem, answer, b, c, d, explanation, section] of rows) {
@@ -271,3 +307,13 @@ add(13, 'hard', [
   ['Let f(x)=1/(x−1), g(x)=x+1. The expression for f∘g simplifies to 1/x. What is its domain?', 'ℝ ∖ {0}', 'ℝ ∖ {1}', 'ℝ', 'ℝ ∖ {−1}', 'f(g(x))=1/[(x+1)−1]=1/x. The inner output must not equal 1, so x≠0.', 'Composition Definition · rational extension'],
   ['Let f:A→B and g:B→C. If g∘f is injective, what must be true?', 'f is injective', 'g is injective on all of B', 'f is surjective onto B', 'g is surjective onto C', 'If f(a)=f(b), applying g makes the composite outputs equal, forcing a=b. The composite tests g only on ran f, not necessarily the rest of B.', 'Composition and Injectivity · extension']
 ]);
+
+const topicByQuestion = new Map();
+for (const topic of TOPICS) for (const id of topic.questionIds) {
+  if (topicByQuestion.has(id)) throw new Error(`Duplicate topic assignment for ${id}`);
+  topicByQuestion.set(id, topic.id);
+}
+for (const question of QUESTIONS) {
+  question.topic = topicByQuestion.get(question.id);
+  if (!question.topic) throw new Error(`Missing topic for ${question.id}`);
+}
