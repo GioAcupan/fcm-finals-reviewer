@@ -1,0 +1,16 @@
+{
+  "id": "/",
+  "name": "FCM Finals Reviewer",
+  "short_name": "FCM Reviewer",
+  "description": "Offline practice, exams, and cheat sheets for lessons 4–13.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#20221f",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -1,0 +1,68 @@
+import { test, expect } from '@playwright/test';
+
+test('practice can be answered, checked, saved, resumed, submitted, and reviewed',async({page})=>{
+  const errors=[];page.on('pageerror',error=>errors.push(error.message));
+  await page.goto('/');
+  await page.getByRole('button',{name:'Start practicing',exact:true}).click();
+  await expect(page.locator('.answer')).toHaveCount(4);
+  await expect(page.getByRole('button',{name:'Check answer',exact:true})).toBeDisabled();
+  await page.locator('.answer').first().click();
+  await page.getByRole('button',{name:'Check answer',exact:true}).click();
+  await expect(page.locator('.explanation')).toBeVisible();
+  await page.getByRole('button',{name:'Save question',exact:true}).click();
+  const stem=await page.locator('#question-title').textContent();
+  await page.reload();await expect(page.locator('#question-title')).toHaveText(stem);
+  await expect(page.locator('.explanation')).toBeVisible();
+  await page.getByRole('button',{name:'Next question',exact:true}).click();
+  await expect(page.locator('.explanation')).toHaveCount(0);
+  await page.getByRole('button',{name:'Save & leave',exact:true}).click();
+  await page.getByRole('button',{name:'Resume',exact:true}).click();
+  await page.locator('.question-map summary').click();
+  await page.getByRole('button',{name:'Question 10, unanswered',exact:true}).click();
+  await page.getByRole('button',{name:'Finish session',exact:true}).click();
+  await page.getByRole('button',{name:'Finish session',exact:true}).last().click();
+  await expect(page.getByText('SESSION COMPLETE',{exact:true})).toBeVisible();
+  await page.locator('.review-item summary').first().click();
+  await expect(page.locator('.review-body .explanation').first()).toBeVisible();
+  await page.goto('/#progress');await expect(page.getByRole('button',{name:'Saved questions · 1',exact:true})).toBeVisible();
+  expect(errors).toEqual([]);
+});
+test('exam hides explanations, preserves answers and deadline, and auto-submits when expired',async({page})=>{
+  await page.goto('/#exam');await page.getByRole('button',{name:'Begin mock exam',exact:true}).click();
+  await page.locator('.answer').first().click();
+  await expect(page.locator('.explanation')).toHaveCount(0);
+  await expect(page.getByRole('button',{name:'Check answer',exact:true})).toHaveCount(0);
+  const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('fcm-reviewer-v1')).session.deadline);
+  await page.reload();
+  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('fcm-reviewer-v1')).session.deadline)).toBe(before);
+  await expect(page.locator('.answer.selected')).toHaveCount(1);
+  await page.evaluate(()=>{const s=JSON.parse(localStorage.getItem('fcm-reviewer-v1'));s.session.deadline=Date.now()-100;localStorage.setItem('fcm-reviewer-v1',JSON.stringify(s));});
+  await page.reload();await expect(page.getByText('SESSION COMPLETE',{exact:true})).toBeVisible();
+  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('fcm-reviewer-v1')));
+  expect(saved.history.length).toBe(1);expect(saved.session.submitted).toBe(true);
+  await page.reload();expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('fcm-reviewer-v1')).history.length)).toBe(1);
+});
+test('complete app works after network goes offline, including a cold reload and cheat sheets',async({page,context})=>{
+  await page.goto('/');await page.evaluate(()=>navigator.serviceWorker.ready);
+  await page.waitForFunction(()=>navigator.serviceWorker.controller!==null);
+  await context.setOffline(true);await page.reload();
+  await expect(page.getByRole('button',{name:'Start practicing',exact:true})).toBeVisible();
+  await page.goto('/#sheets');await page.locator('#sheet-search').fill('induction');
+  await expect(page.locator('.sheet')).toHaveCount(1);
+  await expect(page.getByText('Induction, without the missing step',{exact:true})).toBeVisible();
+  await page.goto('/#study');await page.getByRole('button',{name:'Start practicing',exact:true}).click();
+  await expect(page.locator('.answer')).toHaveCount(4);
+  await page.locator('.answer').first().click();await page.getByRole('button',{name:'Check answer',exact:true}).click();
+  await expect(page.locator('.explanation')).toBeVisible();
+});
+for(const width of [320,375,414,768,1366])test(`responsive layout has no page overflow at ${width}px`,async({page})=>{
+  await page.setViewportSize({width,height:900});await page.goto('/');
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await page.screenshot({path:`test-results/study-${width}.png`,fullPage:true});
+  await page.getByRole('button',{name:'Start practicing',exact:true}).click();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await page.locator('.answer').first().click();await page.getByRole('button',{name:'Check answer',exact:true}).click();
+  await page.screenshot({path:`test-results/question-${width}.png`,fullPage:true});
+  await page.goto('/#sheets');await page.locator('#sheet-search').fill('composition');
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+});

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#20221f">
+  <meta name="description" content="Your offline study desk for FCM lessons 4–13. Practice questions, worked explanations, timed exams, and cheat sheets.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <link rel="stylesheet" href="./tokens.css">
+  <link rel="stylesheet" href="./styles.css">
+  <title>FCM / Finals reviewer</title>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="header"><a class="brand" href="#study" aria-label="FCM reviewer home"><span class="brand-icon">f.</span><span>FCM<span class="brand-sub">FINALS REVIEWER</span></span></a><div class="header-tools"><button class="quiet-button" id="install-button">Install app</button><span id="mobile-cache-status" class="mobile-cache-status" role="status">Preparing offline…</span></div></header>
+  <div id="offline-banner" class="status-banner" hidden role="status"></div>
+  <div class="shell"><aside class="sidebar"><p class="eyebrow">YOUR STUDY DESK</p><nav id="nav" aria-label="Main navigation"></nav><div class="sidebar-note"><span class="math-mark">∀</span><p>A little progress.<br>One problem at a time.</p><span id="cache-status" class="small muted">Preparing offline copy…</span></div></aside><main id="main" tabindex="-1"></main></div>
+  <footer class="footer"><span>FCM · Lessons 04–13</span><button class="text-button" data-action="about">Sources & app info</button></footer>
+  <div id="toast" class="toast" role="status" hidden></div>
+  <dialog id="dialog"><div id="dialog-content"></div></dialog>
+  <noscript>This reviewer needs JavaScript enabled. All study data stays on your device.</noscript>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
